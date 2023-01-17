@@ -1,69 +1,57 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Find Temp dirs
-
-# Controls when the workflow will run
+name: Work with temporary files
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  example:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-#       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-#       - uses: actions/checkout@v3
-
-#       # Runs a single command using the runners shell
-#       - name: Run a one-line script
-#         run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo "::group::Mount output"
-          mount || echo failed to run mount
-          echo "::endgroup::"
-          echo HOME=$HOME
-          env|grep -i tmp
-          env|grep -i temp
-          env|grep -i XDG
-          echo making temporary directory
-          mktemp
-          echo "::group::TMPDIR access"
-          if [[ -n ${TMPDIR+x} ]]; then
-            ls -la "${TMPDIR}"
-            touch "${TMPDIR}"/i_wuz_here || echo could not write to TMPDIR
-            echo again
-            ls -la "${TMPDIR}"
-          else
-            echo no tmpdir
-          fi
-          echo "::endgroup::"
-          echo "::group::/tmp contents"
-          if [[ -d /tmp ]]; then
-            ls -la /tmp 
-            ls -lad /tmp
-          else
-            echo /tmp does not exist
-          fi
-          echo "::endgroup::"
-          echo "::group::contents of RUNNER_TEMP"
-          [[ -n "${RUNNER_TEMP+x}" ]] && ls -la $RUNNER_TEMP || echo RUNNER_TEMP doesn't exist
-          echo "::endgroup::"
-          echo "::group::contents of XDG_RUNTIME_DIR"
-          ls -la $XDG_RUNTIME_DIR || echo could not access XDG_RUNTIME_DIR
-          echo "::endgroup::"
+      - if: ${{ always() }}
         shell: bash
+        run: |
+          set +e
+          if [[ -n ${TMPDIR+1} ]]; then
+            echo "TMPDIR=${TMPDIR}"
+          else
+            echo "TMPDIR is unset, as we see on Ubuntu and Windows."
+          fi
+          echo -n 'mktemp location: '
+          which mktemp
+          echo 'On Ubuntu, this will create a file under /tmp and return its name, as mktemp falls back to /tmp since $TMPDIR is not set'
+          echo 'This can be overridden, but software not aware of GitHub Actions may not do so.'
+          echo 'https://manpages.ubuntu.com/manpages/jammy/man1/mktemp.1.html'
+          echo
+          echo 'On macOS, this will fail as _CS_DARWIN_USER_TEMP_DIR (which also gets set to $TMPDIR) is on a read-only filesystem.'
+          echo 'https://ss64.com/osx/mktemp.html'
+          echo
+          echo "On Windows, it create a temporary file in git bash's /tmp, which is directed to %TMP%, which is %CSIDL_LOCAL_APPDATA%\Temp"
+          echo 'https://learn.microsoft.com/en-us/windows/deployment/usmt/usmt-recognized-environment-variables'
+          mktemp 2>&1
+      - if: ${{ always() }}
+        shell: python
+        run: |
+          from os import environ
+          import tempfile
+          print("Now using Python's temporary directory checker: https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir")
+          print("On Ubuntu, this will print /tmp, as that's the first directory available in Python's search list.")
+          print("On macOS, it will print the contents of $TMPDIR, which is in /var/folders. This should be the same base as the location from bash above.")
+          print("https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir")
+          print(f"Relevant environment variables:\n{environ.get('TMPDIR')=}\n{environ.get('TEMP')=}\n{environ.get('TMP')=}")
+          print(tempfile.gettempdir())
+          print("\nNow we create a temporary file and see similar effects on the various platforms as from the bash example:")
+          try:
+            with tempfile.NamedTemporaryFile() as temp:
+              print("File created successfully.")
+              print(f"File: {temp.name}")
+          except Exception as e:
+            print("File creation failed. The error was:")
+            print(repr(e))
+            print("This is what we expect on macOS, as $TMPDIR is on a read-only FS.")
+          else:
+            print("On Ubuntu and Windows we have success, but different behaviour.")
+            print("On Ubuntu, it fell-back to the platform-specific location of /tmp.")
+            print("On Windows, it got the directory from the environment variable TEMP")
