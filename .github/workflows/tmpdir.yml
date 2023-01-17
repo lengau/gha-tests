@@ -34,19 +34,20 @@ jobs:
       - if: ${{ always() }}
         shell: python
         run: |
+          from __future__ import print_function
           from os import environ
           import tempfile
           print("Now using Python's temporary directory checker: https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir")
           print("On Ubuntu, this will print /tmp, as that's the first directory available in Python's search list.")
           print("On macOS, it will print the contents of $TMPDIR, which is in /var/folders. This should be the same base as the location from bash above.")
           print("https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir")
-          print(f"Relevant environment variables:\n{environ.get('TMPDIR')=}\n{environ.get('TEMP')=}\n{environ.get('TMP')=}")
+          print("Relevant environment variables:\nTMPDIR={}\nTEMP={}\nTMP={}\n".format(environ.get('TMPDIR'),environ.get('TEMP'),environ.get('TMP')))
           print(tempfile.gettempdir())
           print("\nNow we create a temporary file and see similar effects on the various platforms as from the bash example:")
           try:
             with tempfile.NamedTemporaryFile() as temp:
               print("File created successfully.")
-              print(f"File: {temp.name}")
+              print("File: {}".format(temp.name))
           except Exception as e:
             print("File creation failed. The error was:")
             print(repr(e))
@@ -55,3 +56,4 @@ jobs:
             print("On Ubuntu and Windows we have success, but different behaviour.")
             print("On Ubuntu, it fell-back to the platform-specific location of /tmp.")
             print("On Windows, it got the directory from the environment variable TEMP")
+
