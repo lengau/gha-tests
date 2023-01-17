@@ -40,11 +40,26 @@ jobs:
           env|grep -i tmp
           env|grep -i temp
           env|grep -i XDG
+          echo "::group::TMPDIR access"
+          if [[ -n ${TMPDIR+x} ]]; then
+            ls -la "${TMPDIR}"
+            touch "${TMPDIR}"/i_wuz_here
+            echo again
+            ls -la "${TMPDIR}"
+          else
+            echo no tmpdir
+          fi
+          echo "::endgroup::"
           echo "::group::/tmp contents"
-          ls -la /tmp || echo could not access /tmp
+          if [[ -d /tmp ]]; then
+            ls -la /tmp 
+            ls -lad /tmp
+          else
+            echo /tmp does not exist
+          fi
           echo "::endgroup::"
           echo "::group::contents of RUNNER_TEMP"
-          ls -la $RUNNER_TEMP || echo could not access RUNNER_TEMP
+          [[ -n "${RUNNER_TEMP+x}" ]] && ls -la $RUNNER_TEMP || echo RUNNER_TEMP doesn't exist
           echo "::endgroup::"
           echo "::group::contents of XDG_RUNTIME_DIR"
           ls -la $XDG_RUNTIME_DIR || echo could not access XDG_RUNTIME_DIR
