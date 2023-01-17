@@ -40,6 +40,8 @@ jobs:
           env|grep -i tmp
           env|grep -i temp
           env|grep -i XDG
+          echo making temporary directory
+          mktemp
           echo "::group::TMPDIR access"
           if [[ -n ${TMPDIR+x} ]]; then
             ls -la "${TMPDIR}"
