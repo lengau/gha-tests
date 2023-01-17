@@ -37,18 +37,19 @@ jobs:
       - name: Run a multi-line script
         run: |
           echo "::group::Mount output"
-          mount
+          mount || echo failed to run mount
           echo "::endgroup::"
           echo HOME=$HOME
           env|grep -i tmp
           env|grep -i temp
           env|grep -i XDG
           echo "::group::/tmp contents"
-          ls -la /tmp
+          ls -la /tmp || echo could not access /tmp
           echo "::endgroup::"
           echo "::group::contents of RUNNER_TEMP"
-          ls -la $RUNNER_TEMP
+          ls -la $RUNNER_TEMP || echo could not access RUNNER_TEMP
           echo "::endgroup::"
           echo "::group::contents of XDG_RUNTIME_DIR"
-          ls -la $XDG_RUNTIME_DIR
+          ls -la $XDG_RUNTIME_DIR || echo could not access XDG_RUNTIME_DIR
           echo "::endgroup::"
+        shell: bash
