@@ -43,7 +43,7 @@ jobs:
           echo "::group::TMPDIR access"
           if [[ -n ${TMPDIR+x} ]]; then
             ls -la "${TMPDIR}"
-            touch "${TMPDIR}"/i_wuz_here
+            touch "${TMPDIR}"/i_wuz_here || echo could not write to TMPDIR
             echo again
             ls -la "${TMPDIR}"
           else
